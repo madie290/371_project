@@ -1,0 +1,97 @@
+{
+  "madierinkevicz@gmail.com": [
+    {
+      "id": 3,
+      "content": "It's okay to not be okay right now.",
+      "category": "Grief & Loss",
+      "username": "1234",
+      "favorite": true
+    },
+    {
+      "id": 2,
+      "content": "I'm sorry for making you feel that way. Even though it wasn't my intent it was still not okay for me to do.",
+      "category": "Apologies",
+      "username": "1234",
+      "favorite": false
+    }
+  ],
+  "testing123@gmail.com": [
+    {
+      "id": 1,
+      "content": "You've got this",
+      "category": "Motivational Quotes",
+      "username": "Admin",
+      "favorite": false,
+      "public": true
+    },
+    {
+      "id": 2,
+      "content": "That sounds really difficult. How are you coping?",
+      "category": "Mental Health",
+      "username": "Admin",
+      "favorite": false,
+      "public": true,
+      "description": "Hard situation"
+    },
+    {
+      "id": 3,
+      "content": "No is a full sentence, use it well!",
+      "category": "Motivational Quotes",
+      "username": "Admin",
+      "favorite": false,
+      "public": false
+    },
+    {
+      "id": 4,
+      "content": "When my shift is over I depart the workplace.",
+      "category": "Workplace Issues",
+      "username": "Admin",
+      "favorite": false,
+      "public": true
+    },
+    {
+      "id": 5,
+      "content": "Family isn't always blood. It's the people in life who want you in theres.",
+      "category": "Family Conflicts",
+      "username": "Admin",
+      "favorite": false,
+      "public": true
+    },
+    {
+      "id": 6,
+      "content": "Just have to keep pushing.",
+      "category": "Motivational Quotes",
+      "description": "Motivation",
+      "username": "Admin",
+      "favorite": false,
+      "public": false
+    },
+    {
+      "id": 7,
+      "content": "I can't imagine how tough it must be right now. You are in my thoughts and prayers.",
+      "category": "Grief & Loss",
+      "description": "Comfort in a time of grieving. ",
+      "username": "Admin",
+      "favorite": false,
+      "public": true
+    },
+    {
+      "id": 8,
+      "content": "i'm Sorry",
+      "category": "Apologies",
+      "description": "Apology to a friend",
+      "username": "Admin",
+      "favorite": false,
+      "public": true
+    },
+    {
+      "id": 9,
+      "content": "It's okay to not be okay right now.",
+      "category": "Grief & Loss",
+      "description": "",
+      "username": "Admin",
+      "favorite": false,
+      "public": true
+    }
+  ]
+}
