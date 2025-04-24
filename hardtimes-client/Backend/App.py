@@ -7,13 +7,16 @@ app = Flask(__name__)
 app.secret_key = "GVSU2003"
 CORS(app, supports_credentials=True, origins=["http://localhost:5173"], allow_headers=["Content-Type"])
 
+DIST_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Frontend', 'dist'))
+
+
 USERS_FILE   = 'users.json'
 PROMPTS_FILE = 'prompts.json'
 SAVED_FILE   = 'saved.json'
 
 @app.route('/')
 def serve_home():
-    return send_from_directory('frontend', 'index.html')
+    return send_from_directory(DIST_PATH, 'index.html')
 
 @app.route('/<path:path>')
 def serve_static(path):
