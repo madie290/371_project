@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify, session, send_from_directory
 from flask_cors import CORS
 import json, os
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -10,6 +10,14 @@ CORS(app, supports_credentials=True, origins=["http://localhost:5173"], allow_he
 USERS_FILE   = 'users.json'
 PROMPTS_FILE = 'prompts.json'
 SAVED_FILE   = 'saved.json'
+
+@app.route('/')
+def serve_home():
+    return send_from_directory('frontend', 'index.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory('frontend', path)
 
 def load_users():
     if os.path.exists(USERS_FILE):
@@ -50,9 +58,6 @@ def save_saved(s):
     with open(SAVED_FILE, 'w') as f:
         json.dump(s, f, indent=2)
 
-# -------------------------------
-# Auth Endpoints
-# -------------------------------
 @app.route('/api/signup', methods=['POST'])
 def signup():
     try:
@@ -107,9 +112,6 @@ def logout():
     session.pop('user', None)
     return jsonify({'success': True})
 
-# -------------------------------
-# User Profile Endpoints
-# -------------------------------
 @app.route('/api/user', methods=['GET'])
 def get_user():
     user = session.get('user')
@@ -142,16 +144,12 @@ def update_user():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# -------------------------------
-# Prompt Endpoints
-# -------------------------------
 @app.route('/api/prompts', methods=['GET'])
 def get_prompts():
     try:
         prompts = load_prompts()
         category = request.args.get('category')
 
-        # Public category view
         if category:
             results = []
             for owner_email, plist in prompts.items():
@@ -162,7 +160,6 @@ def get_prompts():
                         results.append(item)
             return jsonify({'success': True, 'prompts': results})
 
-        # Private account view
         user = session.get('user')
         if not user:
             return jsonify({'success': False, 'error': 'Not logged in'}), 401
@@ -178,10 +175,10 @@ def add_prompt():
             return jsonify({'success': False, 'error': 'Not logged in'}), 401
 
         data = request.get_json() or {}
-        content     = data.get('content')
-        category    = data.get('category')
-        public      = data.get('public', True)
-        description = data.get('description')  # ✅ FIXED
+        content = data.get('content')
+        category = data.get('category')
+        public = data.get('public', True)
+        description = data.get('description')
 
         if not content or not category:
             return jsonify({'success': False, 'error': 'Prompt content and category are required'}), 400
@@ -193,7 +190,7 @@ def add_prompt():
             'id': len(user_prompts) + 1,
             'content': content,
             'category': category,
-            'description': description,  
+            'description': description,
             'username': user.get('username', 'Anonymous'),
             'favorite': False,
             'public': bool(public)
@@ -207,7 +204,6 @@ def add_prompt():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
 @app.route('/api/update-prompt', methods=['PUT'])
 def update_prompt():
     try:
@@ -215,12 +211,11 @@ def update_prompt():
         if not user:
             return jsonify({'success': False, 'error': 'Not logged in'}), 401
 
-        data       = request.get_json() or {}
-        prompt_id  = data.get('id')
+        data = request.get_json() or {}
+        prompt_id = data.get('id')
         new_content = data.get('content')
-        
         new_category = data.get('category')
-        new_public   = data.get('public')
+        new_public = data.get('public')
         new_description = data.get('description')
         prompts = load_prompts()
         user_prompts = prompts.get(user['email'], [])
@@ -267,9 +262,6 @@ def delete_prompt():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# -------------------------------
-# Save / Unsave Endpoints
-# -------------------------------
 @app.route('/api/favorite-prompt', methods=['PUT'])
 def favorite_prompt():
     try:
@@ -277,10 +269,10 @@ def favorite_prompt():
         if not user:
             return jsonify({'success': False, 'error': 'Not logged in'}), 401
 
-        data      = request.get_json() or {}
+        data = request.get_json() or {}
         prompt_id = data.get('id')
-        owner     = data.get('owner')
-        fav       = data.get('favorite', True)
+        owner = data.get('owner')
+        fav = data.get('favorite', True)
 
         all_prompts = load_prompts().get(owner, [])
         prompt = next((p for p in all_prompts if p['id'] == prompt_id), None)
@@ -291,11 +283,11 @@ def favorite_prompt():
         my_list = saved.get(user['email'], [])
 
         if fav:
-            if not any(p['owner']==owner and p['id']==prompt_id for p in my_list):
+            if not any(p['owner'] == owner and p['id'] == prompt_id for p in my_list):
                 entry = {**prompt, 'owner': owner}
                 my_list.append(entry)
         else:
-            my_list = [p for p in my_list if not (p['owner']==owner and p['id']==prompt_id)]
+            my_list = [p for p in my_list if not (p['owner'] == owner and p['id'] == prompt_id)]
 
         saved[user['email']] = my_list
         save_saved(saved)
@@ -315,4 +307,5 @@ def get_saved_prompts():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
