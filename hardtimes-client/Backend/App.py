@@ -3,16 +3,12 @@ from flask_cors import CORS
 import json, os
 from werkzeug.security import generate_password_hash, check_password_hash
 
+#
+DIST_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Frontend', 'dist'))
+
 app = Flask(__name__)
 app.secret_key = "GVSU2003"
 CORS(app, supports_credentials=True, origins=["http://localhost:5173"], allow_headers=["Content-Type"])
-
-DIST_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Frontend', 'dist'))
-
-
-USERS_FILE   = 'users.json'
-PROMPTS_FILE = 'prompts.json'
-SAVED_FILE   = 'saved.json'
 
 @app.route('/')
 def serve_home():
@@ -20,7 +16,11 @@ def serve_home():
 
 @app.route('/<path:path>')
 def serve_static(path):
-    return send_from_directory('frontend', path)
+    return send_from_directory(DIST_PATH, path)
+
+USERS_FILE   = 'users.json'
+PROMPTS_FILE = 'prompts.json'
+SAVED_FILE   = 'saved.json'
 
 def load_users():
     if os.path.exists(USERS_FILE):
