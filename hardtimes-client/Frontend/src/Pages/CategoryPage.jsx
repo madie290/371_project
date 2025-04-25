@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../Components/Auth_context';
 import Navbar from '../Components/Navbar';
 import Footer from '../Components/Footer';
+import API from '../Api'; 
 
 const allCategories = [
   { name: 'Grief & Loss',             slug: 'grief-loss' },
@@ -20,7 +21,7 @@ const allCategories = [
 
 export default function CategoryPage() {
   const { user } = useAuth();
-  const { categoryName } = useParams(); // slug
+  const { categoryName } = useParams();
   const [prompts, setPrompts] = useState([]);
   const [selectedPrompt, setSelectedPrompt] = useState(null);
 
@@ -28,26 +29,18 @@ export default function CategoryPage() {
     allCategories.find(c => c.slug === categoryName)?.name || categoryName;
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/prompts?category=${encodeURIComponent(formattedCategory)}`)
-      .then(r => {
-        if (!r.ok) throw new Error(r.status);
-        return r.json();
-      })
-      .then(data => setPrompts(data.prompts || []))
+    API.get(`/api/prompts?category=${encodeURIComponent(formattedCategory)}`)
+      .then(res => setPrompts(res.data.prompts || []))
       .catch(err => console.error('Fetch error:', err));
   }, [formattedCategory]);
 
   const toggleFavorite = (id, owner, fav) => {
-    fetch('http://localhost:5000/api/favorite-prompt', {
-      method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, owner, favorite: fav }),
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          setPrompts(prompts.map(p => (p.id === id && p.owner === owner ? { ...p, favorite: fav } : p)));
+    API.put('/api/favorite-prompt', { id, owner, favorite: fav })
+      .then(res => {
+        if (res.data.success) {
+          setPrompts(prompts.map(p => (
+            p.id === id && p.owner === owner ? { ...p, favorite: fav } : p
+          )));
         }
       })
       .catch(console.error);

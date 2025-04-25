@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../Components/Auth_context';
+import API from '../Api'; 
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -15,22 +16,17 @@ export default function Signup() {
     setError('');
 
     try {
-      const res = await fetch('http://localhost:5000/api/signup', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, username, password }),
+      const res = await API.post('/api/signup', {
+        email,
+        username,
+        password,
       });
 
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Signup failed');
+      if (!res.data.success) {
+        throw new Error(res.data.error || 'Signup failed');
       }
 
-      login(data.user);
+      login(res.data.user);
       navigate('/');
     } catch (err) {
       setError(err.message);

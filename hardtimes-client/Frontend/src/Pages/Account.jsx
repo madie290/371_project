@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../Components/Auth_context';
 import Navbar from '../Components/Navbar';
 import Footer from '../Components/Footer';
+import API from '../Api'; 
 
 export default function Account() {
   const { user, logout, loading } = useAuth();
@@ -18,51 +19,49 @@ export default function Account() {
   const [editedPublic, setEditedPublic] = useState(true);
   const [message, setMessage] = useState('');
 
-  //Redirect guests to login
   useEffect(() => {
-    if (!loading && !user) {
-      navigate('/login');
-    }
+    if (!loading && !user) navigate('/login');
   }, [user, loading, navigate]);
-
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     setActiveSection(params.get('section') || 'mine');
   }, [location.search]);
 
+  const fetchAll = async () => {
+    try {
+      const [promptsRes, savedRes] = await Promise.all([
+        API.get('/api/prompts'),
+        API.get('/api/saved-prompts'),
+      ]);
 
-  const fetchAll = () => {
-    //Your prompts
-    fetch('http://localhost:5000/api/prompts', { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) setMyPrompts(data.prompts || []);
-        else setMessage('Error loading your prompts');
-      })
-      .catch(() => setMessage('Error loading your prompts'));
+      if (promptsRes.data.success) {
+        setMyPrompts(promptsRes.data.prompts || []);
+      } else {
+        setMessage('Error loading your prompts');
+      }
 
-    //Saved prompts
-    fetch('http://localhost:5000/api/saved-prompts', { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) setSavedPrompts(data.prompts || []);
-        else setMessage('Error loading saved prompts');
-      })
-      .catch(() => setMessage('Error loading saved prompts'));
+      if (savedRes.data.success) {
+        setSavedPrompts(savedRes.data.prompts || []);
+      } else {
+        setMessage('Error loading saved prompts');
+      }
+    } catch {
+      setMessage('Error loading prompts');
+    }
   };
 
   useEffect(() => {
     if (user) fetchAll();
   }, [user]);
 
-  //Start editing
   const startEditing = (prompt) => {
     setEditingId(prompt.id);
     setEditedText(prompt.content);
     setEditedDescription(prompt.description || '');
     setEditedPublic(prompt.public ?? true);
   };
+
   const cancelEditing = () => {
     setEditingId(null);
     setEditedText('');
@@ -70,59 +69,55 @@ export default function Account() {
     setEditedPublic(true);
   };
 
-  //Save edits
-  const saveEdit = async id => {
-    const res = await fetch('http://localhost:5000/api/update-prompt', {
-      method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+  const saveEdit = async (id) => {
+    try {
+      const res = await API.put('/api/update-prompt', {
         id,
         content: editedText,
         description: editedDescription,
-        public: editedPublic
-      }),
-    });
-    const data = await res.json();
-    if (data.success) {
-      setMyPrompts(data.prompts || []);
-      cancelEditing();
-    } else {
-      alert(data.error || 'Failed to update prompt');
+        public: editedPublic,
+      });
+      if (res.data.success) {
+        setMyPrompts(res.data.prompts || []);
+        cancelEditing();
+      } else {
+        alert(res.data.error || 'Failed to update prompt');
+      }
+    } catch {
+      alert('Failed to update prompt');
     }
   };
 
-  //Delete prompt
-  const deletePrompt = async id => {
+  const deletePrompt = async (id) => {
     if (!window.confirm('Delete this prompt?')) return;
-    const res = await fetch('http://localhost:5000/api/delete-prompt', {
-      method: 'DELETE',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    });
-    const data = await res.json();
-    if (data.success) {
-      setMyPrompts(data.prompts || []);
-      setSavedPrompts(savedPrompts.filter(p => p.id !== id));
-    } else {
-      alert(data.error || 'Failed to delete prompt');
+    try {
+      const res = await API.delete('/api/delete-prompt', {
+        data: { id },
+      });
+      if (res.data.success) {
+        setMyPrompts(res.data.prompts || []);
+        setSavedPrompts(savedPrompts.filter(p => p.id !== id));
+      } else {
+        alert(res.data.error || 'Failed to delete prompt');
+      }
+    } catch {
+      alert('Failed to delete prompt');
     }
   };
 
-  //Save and unsave 
   const toggleFavorite = async (id, fav) => {
-    const res = await fetch('http://localhost:5000/api/favorite-prompt', {
-      method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, favorite: fav }),
-    });
-    const data = await res.json();
-    if (data.success) {
-      fetchAll();
-    } else {
-      alert(data.error || 'Failed to update saved status');
+    try {
+      const res = await API.put('/api/favorite-prompt', {
+        id,
+        favorite: fav,
+      });
+      if (res.data.success) {
+        fetchAll();
+      } else {
+        alert(res.data.error || 'Failed to update saved status');
+      }
+    } catch {
+      alert('Failed to update saved status');
     }
   };
 
@@ -161,9 +156,7 @@ export default function Account() {
           </button>
         </aside>
 
-    
         <section className="w-full md:w-3/4 p-6 space-y-6">
-          {/* Your Prompts */}
           {activeSection === 'mine' && (
             <div>
               <h3 className="text-xl font-semibold mb-2">Your Prompts</h3>
@@ -179,20 +172,17 @@ export default function Account() {
                       <div className="flex-1">
                         {editingId === prompt.id ? (
                           <>
-                            {/* Content */}
                             <input
                               value={editedText}
                               onChange={e => setEditedText(e.target.value)}
                               className="border p-2 w-full mb-2 rounded"
                             />
-                            {/* Description */}
                             <textarea
                               value={editedDescription}
                               onChange={e => setEditedDescription(e.target.value)}
                               className="border p-2 w-full mb-2 rounded"
                               rows="3"
                             />
-                            {/* Public toggle */}
                             <label className="inline-flex items-center mb-2">
                               <input
                                 type="checkbox"
@@ -202,7 +192,6 @@ export default function Account() {
                               />
                               <span className="text-sm">Make Public</span>
                             </label>
-                            {/* Save/Cancel */}
                             <div className="space-x-2">
                               <button
                                 onClick={() => saveEdit(prompt.id)}
@@ -261,7 +250,6 @@ export default function Account() {
             </div>
           )}
 
-          {/* Saved Prompts */}
           {activeSection === 'saved' && (
             <div>
               <h3 className="text-xl font-semibold mb-2">Saved Prompts</h3>

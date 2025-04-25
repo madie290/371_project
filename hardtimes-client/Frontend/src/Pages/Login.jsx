@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../Components/Auth_context';
+import API from '../Api'; 
 
 function Login() {
   const [username, setUsername] = useState('');
@@ -8,7 +9,6 @@ function Login() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  //Pull login setter from context
   const { login } = useAuth();
 
   const handleSubmit = async (e) => {
@@ -16,24 +16,13 @@ function Login() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/login', {
-       
-        credentials: 'include',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', 
-        body: JSON.stringify({ username, password }),
-      });
+      const response = await API.post('/api/login', { username, password });
 
-      const data = await response.json();
-      if (data.success) {
-        await login({ username, password });
-          navigate('/');
-
+      if (response.data.success) {
+        await login({ username, password }); // optional, based on your auth logic
+        navigate('/');
       } else {
-        setError(data.error || 'An error occurred.');
+        setError(response.data.error || 'An error occurred.');
       }
     } catch (err) {
       console.error(err);
